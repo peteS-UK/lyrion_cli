@@ -1,0 +1,10 @@
+{
+    "services": {
+        "method": {
+            "service": "mdi:console"
+        },
+        "query": {
+            "service": "mdi:database"
+        }
+    }
+}
