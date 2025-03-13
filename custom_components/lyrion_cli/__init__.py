@@ -72,25 +72,18 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         if "entity_id" in call.data:
             for entity_id in call.data["entity_id"]:
                 entity = entity_registry.async_get(entity_id_or_uuid=entity_id)
+                config_entry = hass.config_entries.async_get_entry(
+                    entity.config_entry_id
+                )
 
                 players.append(
                     player(
                         mac=entity.unique_id,
-                        lms_ip=hass.config_entries.async_get_entry(
-                            entity.config_entry_id
-                        ).data[CONF_HOST],
-                        lms_port=hass.config_entries.async_get_entry(
-                            entity.config_entry_id
-                        ).data[CONF_PORT],
-                        lms_https=hass.config_entries.async_get_entry(
-                            entity.config_entry_id
-                        ).data["https"],
-                        username=hass.config_entries.async_get_entry(
-                            entity.config_entry_id
-                        ).data.get("username"),
-                        password=hass.config_entries.async_get_entry(
-                            entity.config_entry_id
-                        ).data.get("password"),
+                        lms_ip=config_entry.data[CONF_HOST],
+                        lms_port=config_entry.data[CONF_PORT],
+                        lms_https=config_entry.data["https"],
+                        username=config_entry.data.get("username"),
+                        password=config_entry.data.get("password"),
                     )
                 )
 
@@ -100,28 +93,26 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 devices.append(device_registry.async_get(device_id))
 
             for device in devices:
-                lms_config_entry = list(
-                    device_registry.async_get(device.via_device_id).config_entries
-                )[0]
+                for config_entry_id in device_registry.async_get(
+                    device.via_device_id
+                ).config_entries:
+                    if (
+                        hass.config_entries.async_get_entry(config_entry_id).domain
+                        == "squeezebox"
+                    ):
+                        lms_config_entry = hass.config_entries.async_get_entry(
+                            config_entry_id
+                        )
+                        break
 
                 players.append(
                     player(
                         mac=list(device.connections)[0][1],
-                        lms_ip=hass.config_entries.async_get_entry(
-                            lms_config_entry
-                        ).data[CONF_HOST],
-                        lms_port=hass.config_entries.async_get_entry(
-                            lms_config_entry
-                        ).data[CONF_PORT],
-                        lms_https=hass.config_entries.async_get_entry(
-                            lms_config_entry
-                        ).data["https"],
-                        username=hass.config_entries.async_get_entry(
-                            lms_config_entry
-                        ).data.get("username"),
-                        password=hass.config_entries.async_get_entry(
-                            lms_config_entry
-                        ).data.get("password"),
+                        lms_ip=lms_config_entry.data[CONF_HOST],
+                        lms_port=lms_config_entry.data[CONF_PORT],
+                        lms_https=lms_config_entry.data["https"],
+                        username=lms_config_entry.data.get("username"),
+                        password=lms_config_entry.data.get("password"),
                     )
                 )
         return players
