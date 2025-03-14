@@ -8,7 +8,7 @@ This repo contains a Home Assistant integration to add two actions for the Lyrio
 
 The preferred installation approach is via Home Assistant Community Store - aka [HACS](https://hacs.xyz/).  The repo is installable as a [Custom Repo](https://hacs.xyz/docs/faq/custom_repositories) via HACS.
 
-If you want to download the integration manually, create a new folder called lyrion_cli under your custom_components folder in your config folder.  If the custom_components folder doesn't exist, create it first.  Once created, download the 3 files from the [github repo](https://github.com/peteS-UK/lyrion_cli/tree/main/custom_components/lyrion_cli) into this lyrion_cli folder.
+If you want to download the integration manually, create a new folder called lyrion_cli under your custom_components folder in your config folder.  If the custom_components folder doesn't exist, create it first.  Once created, download the files from the [github repo](https://github.com/peteS-UK/lyrion_cli/tree/main/custom_components/lyrion_cli) into this lyrion_cli folder.
 
 Once downloaded either via HACS or manually, restart your Home Assistant server.
 
