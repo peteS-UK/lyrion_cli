@@ -81,7 +81,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                         mac=entity.unique_id,
                         lms_ip=config_entry.data[CONF_HOST],
                         lms_port=config_entry.data[CONF_PORT],
-                        lms_https=config_entry.data["https"],
+                        lms_https=config_entry.data.get("https"),
                         username=config_entry.data.get("username"),
                         password=config_entry.data.get("password"),
                     )
@@ -110,7 +110,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                         mac=list(device.connections)[0][1],
                         lms_ip=lms_config_entry.data[CONF_HOST],
                         lms_port=lms_config_entry.data[CONF_PORT],
-                        lms_https=lms_config_entry.data["https"],
+                        lms_https=config_entry.data.get("https"),
                         username=lms_config_entry.data.get("username"),
                         password=lms_config_entry.data.get("password"),
                     )
@@ -199,8 +199,6 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     async def async_method_service(call: ServiceCall) -> None:
         """Call Method."""
-
-        _LOGGER.critical("Method call data %s", call.data)
 
         players = await async_get_players(call=call)
 
