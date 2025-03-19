@@ -33,11 +33,11 @@ ATTR_PARAMETERS = "parameters"
 CLI_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_COMMAND): cv.string,
+        vol.Optional("device_id"): any,
+        vol.Optional("entity_id"): any,
         vol.Optional(ATTR_PARAMETERS): vol.All(
             cv.ensure_list, vol.Length(min=1), [cv.string]
         ),
-        vol.Optional("device_id"): cv.string,
-        vol.Optional("entity_id"): cv.string,
     }
 )
 
@@ -117,6 +117,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 )
         return players
 
+    def ensure_list(item: any) -> list[any]:
+        return item if isinstance(item, list) else [item]
+
     async def async_query(player: player, *command: str):
         session: aiohttp.ClientSession = async_get_clientsession(hass)
 
@@ -186,15 +189,18 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
         all_params = [call.data[ATTR_COMMAND]]
         if call.data.get(ATTR_PARAMETERS):
-            all_params.extend(call.data[ATTR_PARAMETERS])
+            all_params.extend(ensure_list(call.data[ATTR_PARAMETERS]))
+        _LOGGER.debug("Query Params %s", all_params)
         result: ServiceResponse = await async_query(players[0], *all_params)
-
+        _LOGGER.debug("Method result %s", result)
         if result:
             return result
         raise ServiceValidationError("Action returned no result")
 
     async def async_method_service(call: ServiceCall) -> None:
         """Call Method."""
+
+        _LOGGER.critical("Method call data %s", call.data)
 
         players = await async_get_players(call=call)
 
@@ -206,13 +212,13 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         for player in players:
             all_params = [call.data[ATTR_COMMAND]]
             if call.data.get(ATTR_PARAMETERS):
-                all_params.extend(call.data[ATTR_PARAMETERS])
+                all_params.extend(ensure_list(call.data[ATTR_PARAMETERS]))
+            _LOGGER.debug("Method Params %s", all_params)
             result: ServiceResponse = await async_query(player, *all_params)
+            _LOGGER.debug("Method result %s", result)
 
             if result != {}:
-                raise ServiceValidationError(
-                    "Method %s failed", call.data[ATTR_COMMAND]
-                )
+                raise ServiceValidationError(f"Method {call.data[ATTR_COMMAND]} failed")
 
         return True
 
@@ -223,7 +229,11 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         async_query_service,
         supports_response=SupportsResponse.ONLY,
     )
-    hass.services.async_register(DOMAIN, "method", async_method_service)
+    hass.services.async_register(
+        DOMAIN,
+        "method",
+        async_method_service,
+    )
 
     # Return boolean to indicate that initialization was successfully.
     return True
