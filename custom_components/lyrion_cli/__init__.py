@@ -200,8 +200,6 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     async def async_method_service(call: ServiceCall) -> None:
         """Call Method."""
 
-        _LOGGER.critical("Method call data %s", call.data)
-
         players = await async_get_players(call=call)
 
         if len(players) == 0:
