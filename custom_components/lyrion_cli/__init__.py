@@ -10,7 +10,15 @@ import logging
 import aiohttp
 import voluptuous as vol
 
-from homeassistant.const import ATTR_COMMAND, CONF_HOST, CONF_PORT
+from homeassistant.const import (
+    ATTR_COMMAND,
+    ATTR_DEVICE_ID,
+    ATTR_ENTITY_ID,
+    CONF_HOST,
+    CONF_PASSWORD,
+    CONF_PORT,
+    CONF_USERNAME,
+)
 from homeassistant.core import (
     HomeAssistant,
     ServiceCall,
@@ -29,12 +37,13 @@ from homeassistant.helpers.typing import ConfigType
 
 TIMEOUT: float = 10.0
 ATTR_PARAMETERS = "parameters"
+CONF_HTTPS = "https"
 
 CLI_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_COMMAND): cv.string,
-        vol.Optional("device_id"): any,
-        vol.Optional("entity_id"): any,
+        vol.Optional(ATTR_DEVICE_ID): vol.All(cv.ensure_list, [cv.string]),
+        vol.Optional(ATTR_ENTITY_ID): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional(ATTR_PARAMETERS): vol.All(
             cv.ensure_list, vol.Length(min=1), [cv.string]
         ),
@@ -69,8 +78,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         devices: DeviceEntry = []
         players: player = []
 
-        if "entity_id" in call.data:
-            for entity_id in call.data["entity_id"]:
+        if ATTR_ENTITY_ID in call.data:
+            for entity_id in call.data[ATTR_ENTITY_ID]:
                 entity = entity_registry.async_get(entity_id_or_uuid=entity_id)
                 config_entry = hass.config_entries.async_get_entry(
                     entity.config_entry_id
@@ -81,14 +90,14 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                         mac=entity.unique_id,
                         lms_ip=config_entry.data[CONF_HOST],
                         lms_port=config_entry.data[CONF_PORT],
-                        lms_https=config_entry.data.get("https"),
-                        username=config_entry.data.get("username"),
-                        password=config_entry.data.get("password"),
+                        lms_https=config_entry.data.get(CONF_HTTPS),
+                        username=config_entry.data.get(CONF_USERNAME),
+                        password=config_entry.data.get(CONF_PASSWORD),
                     )
                 )
 
-        if "device_id" in call.data:
-            for device_id in call.data["device_id"]:
+        if ATTR_DEVICE_ID in call.data:
+            for device_id in call.data[ATTR_DEVICE_ID]:
                 # devices.append(dr.async_get(device_id))
                 devices.append(device_registry.async_get(device_id))
 
@@ -110,15 +119,12 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                         mac=list(device.connections)[0][1],
                         lms_ip=lms_config_entry.data[CONF_HOST],
                         lms_port=lms_config_entry.data[CONF_PORT],
-                        lms_https=config_entry.data.get("https"),
-                        username=lms_config_entry.data.get("username"),
-                        password=lms_config_entry.data.get("password"),
+                        lms_https=lms_config_entry.data.get(CONF_HTTPS),
+                        username=lms_config_entry.data.get(CONF_USERNAME),
+                        password=lms_config_entry.data.get(CONF_PASSWORD),
                     )
                 )
         return players
-
-    def ensure_list(item: any) -> list[any]:
-        return item if isinstance(item, list) else [item]
 
     async def async_query(player: player, *command: str):
         session: aiohttp.ClientSession = async_get_clientsession(hass)
@@ -189,7 +195,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
         all_params = [call.data[ATTR_COMMAND]]
         if call.data.get(ATTR_PARAMETERS):
-            all_params.extend(ensure_list(call.data[ATTR_PARAMETERS]))
+            all_params.extend(call.data[ATTR_PARAMETERS])
         _LOGGER.debug("Query Params %s", all_params)
         result: ServiceResponse = await async_query(players[0], *all_params)
         _LOGGER.debug("Method result %s", result)
@@ -210,7 +216,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         for player in players:
             all_params = [call.data[ATTR_COMMAND]]
             if call.data.get(ATTR_PARAMETERS):
-                all_params.extend(ensure_list(call.data[ATTR_PARAMETERS]))
+                all_params.extend(call.data[ATTR_PARAMETERS])
             _LOGGER.debug("Method Params %s", all_params)
             result: ServiceResponse = await async_query(player, *all_params)
             _LOGGER.debug("Method result %s", result)
@@ -225,12 +231,14 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         DOMAIN,
         "query",
         async_query_service,
+        schema=CLI_SCHEMA,
         supports_response=SupportsResponse.ONLY,
     )
     hass.services.async_register(
         DOMAIN,
         "method",
         async_method_service,
+        schema=CLI_SCHEMA,
     )
 
     # Return boolean to indicate that initialization was successfully.
