@@ -42,9 +42,7 @@ CONF_HTTPS = "https"
 CLI_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_COMMAND): cv.string,
-        vol.Optional(ATTR_DEVICE_ID): vol.Any(
-            None, vol.All(cv.ensure_list, [vol.Any(cv.dynamic_template, str)])
-        ),
+        vol.Optional(ATTR_DEVICE_ID): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional(ATTR_ENTITY_ID): cv.entity_id,
         vol.Optional(ATTR_PARAMETERS): vol.All(
             cv.ensure_list, vol.Length(min=1), [cv.string]
