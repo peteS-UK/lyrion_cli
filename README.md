@@ -4,6 +4,8 @@
 
 This repo contains a Home Assistant integration to add two actions for the Lyrion/Squeezebox CLI/API.  These duplicate the call_method and call_query actions which already exist in the core Squeezebox integration, which we believe at some point will be depreacted.  The new actions are called method and query.  The only difference is that the new query action will return its result using the modern response variable mechanism, rather than call_query which stored the result in a state attribute.
 
+This is a companion component to the official [Squeezebox](https://www.home-assistant.io/integrations/squeezebox/) integration.  It uses the LMS and player information that is created and maintained by the official component, rather than managing a duplicate set of this information itself.  As such, it's dependent on the official installation being installed and configured.
+
 ## Installation
 
 The preferred installation approach is via Home Assistant Community Store - aka [HACS](https://hacs.xyz/).  The repo is installable as a [Custom Repo](https://hacs.xyz/docs/faq/custom_repositories) via HACS.
