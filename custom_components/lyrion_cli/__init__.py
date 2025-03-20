@@ -43,7 +43,7 @@ CLI_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_COMMAND): cv.string,
         vol.Optional(ATTR_DEVICE_ID): vol.All(cv.ensure_list, [cv.string]),
-        vol.Optional(ATTR_ENTITY_ID): cv.entity_id,
+        vol.Optional(ATTR_ENTITY_ID): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional(ATTR_PARAMETERS): vol.All(
             cv.ensure_list, vol.Length(min=1), [cv.string]
         ),
@@ -119,7 +119,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                         mac=list(device.connections)[0][1],
                         lms_ip=lms_config_entry.data[CONF_HOST],
                         lms_port=lms_config_entry.data[CONF_PORT],
-                        lms_https=config_entry.data.get(CONF_HTTPS),
+                        lms_https=lms_config_entry.data.get(CONF_HTTPS),
                         username=lms_config_entry.data.get(CONF_USERNAME),
                         password=lms_config_entry.data.get(CONF_PASSWORD),
                     )
