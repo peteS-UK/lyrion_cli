@@ -12,12 +12,12 @@ import voluptuous as vol
 
 from homeassistant.const import (
     ATTR_COMMAND,
-    CONF_HOST,
-    CONF_PORT,
-    CONF_USERNAME,
-    CONF_PASSWORD,
     ATTR_DEVICE_ID,
     ATTR_ENTITY_ID,
+    CONF_HOST,
+    CONF_PASSWORD,
+    CONF_PORT,
+    CONF_USERNAME,
 )
 from homeassistant.core import (
     HomeAssistant,
