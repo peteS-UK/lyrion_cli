@@ -68,7 +68,8 @@ DOMAIN = "lyrion_cli"
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigType) -> bool:
+    # async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the sync service example component."""
 
     device_registry = dr.async_get(hass)
