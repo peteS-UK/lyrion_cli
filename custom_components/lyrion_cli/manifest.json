@@ -1,9 +1,9 @@
 {
     "domain": "lyrion_cli",
     "name": "LyrionCLI",
-    "codeowners": [
-        "peteS-UK"
-    ],
+  "codeowners": [
+    "@peteS-UK"
+  ],
     "config_flow": true,
     "dependencies": [],
     "documentation": "https://github.com/peteS-UK/lyrion_cli#readme/",
