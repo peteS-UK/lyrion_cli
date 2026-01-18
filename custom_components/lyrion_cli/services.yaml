@@ -6,7 +6,7 @@ method:
   fields:
     command:
       required: true
-      example: "playlist"
+      example: 'playlist'
       selector:
         text:
     parameters:
@@ -22,7 +22,7 @@ query:
   fields:
     command:
       required: true
-      example: "albums"
+      example: 'albums'
       selector:
         text:
     parameters:
@@ -30,3 +30,9 @@ query:
       advanced: true
       selector:
         object:
+    timeout:
+      required: false
+      example: 10
+      selector:
+        number:
+          unit_of_measurement: seconds

@@ -37,6 +37,7 @@ from homeassistant.helpers.typing import ConfigType
 
 TIMEOUT: float = 10.0
 ATTR_PARAMETERS = "parameters"
+ATTR_TIMEOUT = "timeout"
 CONF_HTTPS = "https"
 
 CLI_SCHEMA = vol.Schema(
@@ -47,6 +48,7 @@ CLI_SCHEMA = vol.Schema(
         vol.Optional(ATTR_PARAMETERS): vol.All(
             cv.ensure_list, vol.Length(min=1), [cv.string]
         ),
+        vol.Optional(ATTR_TIMEOUT): vol.Coerce(float),
     }
 )
 
@@ -127,7 +129,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigType) -> bool:
                 )
         return players
 
-    async def async_query(player: player, *command: str):
+    async def async_query(player: player, *command: str, timeout: float | None = None):
+        if not timeout:
+            timeout = TIMEOUT
+
+        _LOGGER.critical("Timeout %f", timeout)
+
         session: aiohttp.ClientSession = async_get_clientsession(hass)
 
         if session is None:
@@ -147,7 +154,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigType) -> bool:
         )
 
         try:
-            async with asyncio.timeout(TIMEOUT):
+            async with asyncio.timeout(timeout):
                 response = await session.post(url, data=query_data, auth=auth)
 
                 if response.status != 200:
@@ -170,7 +177,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigType) -> bool:
                 _LOGGER.error("Failed communicating with LMS(%s): %s", url, type(error))
             return None
 
-        except (TimeoutError, aiohttp.ClientError) as error:
+        except TimeoutError:
+            raise ServiceValidationError("Query Timed Out")
+
+        except aiohttp.ClientError as error:
             _LOGGER.error("Failed communicating with LMS(%s): %s", url, type(error))
             return None
 
@@ -198,8 +208,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigType) -> bool:
         if call.data.get(ATTR_PARAMETERS):
             all_params.extend(call.data[ATTR_PARAMETERS])
         _LOGGER.debug("Query Params %s", all_params)
-        result: ServiceResponse = await async_query(players[0], *all_params)
-        _LOGGER.debug("Method result %s", result)
+        result: ServiceResponse = await async_query(
+            players[0], *all_params, timeout=call.data.get(ATTR_TIMEOUT)
+        )
+        _LOGGER.debug("Query result %s", result)
         if result:
             return result
         raise ServiceValidationError("Action returned no result")
