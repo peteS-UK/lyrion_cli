@@ -133,8 +133,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigType) -> bool:
         if not timeout:
             timeout = TIMEOUT
 
-        _LOGGER.critical("Timeout %f", timeout)
-
         session: aiohttp.ClientSession = async_get_clientsession(hass)
 
         if session is None:
