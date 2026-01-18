@@ -1,7 +1,7 @@
 # Lyrion CLI Integration
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/integration)
-[![maintained](https://img.shields.io/maintenance/yes/2025.svg)](#)
+[![maintained](https://img.shields.io/maintenance/yes/2026.svg)](#)
 [![maintainer](https://img.shields.io/badge/maintainer-%20%40petes--UK-blue.svg)](#)
 [![version](https://img.shields.io/github/v/release/peteS-UK/lyrion_cli)](#)
 
