@@ -28,3 +28,9 @@ To enable the integration, add the integration under Settings, Devices & Service
 ## Usage
 
 Usage is the same as call_method and call_query. See the docs at https://www.home-assistant.io/integrations/squeezebox/#actions
+
+In addition, the query action supports an additional timeout attribute
+
+| Data attribute | Optional | Description                                                                          |
+| -------------- | -------- | ------------------------------------------------------------------------------------ |
+| `timeout`      | yes      | The number of seconds to wait before the query times out. The default is 10 seconds. |
