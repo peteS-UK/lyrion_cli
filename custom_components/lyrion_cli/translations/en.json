@@ -1,14 +1,14 @@
-{    "title": "Lyrion CLI",
-"config": {
-  "step": {
-    "user": {
-      "data": {
-      },
-      "description": "Press Submit to complete the setup of the Lyrion CLI integration",
-      "title": "Lyrion CLI"
-    }
-  }
-  },    
+{
+    "title": "Lyrion CLI",
+    "config": {
+        "step": {
+            "user": {
+                "data": {},
+                "description": "Press Submit to complete the setup of the Lyrion CLI integration",
+                "title": "Lyrion CLI"
+            }
+        }
+    },
     "services": {
         "method": {
             "name": "Method",
@@ -35,6 +35,10 @@
                 "parameters": {
                     "name": "Parameters",
                     "description": "Array of additional parameters to pass to Lyrion Music Server (p1, ..., pN in the CLI documentation)"
+                },
+                "timeout": {
+                    "name": "Timeout",
+                    "description": "The number of seconds to wait for a response to the query before timing out"
                 }
             }
         }
