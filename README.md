@@ -23,7 +23,10 @@ Once downloaded either via HACS or manually, restart your Home Assistant server.
 
 ## Configuration
 
-To enable the integration, add the integration under Settings, Devices & Services.
+Configuration is done through the Home Assistant UI.  Once you're installed the integration, go into your Integrations (under Settings, Devices & Services), select Add Integration, and choose the Lyrion CLI integration, or click the shortcut button below (requires My Homeassistant configured).
+
+[![Add Integration to your Home Assistant
+instance.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=lyrion_cli)
 
 ## Usage
 

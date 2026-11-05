@@ -1,14 +1,11 @@
-import logging
+"""Config flow for Lyrion CLI."""
 
 from homeassistant import config_entries
 
-# The domain of your component. Should be equal to the name of your component.
-DOMAIN = "lyrion_cli"
-_LOGGER = logging.getLogger(__name__)
+from .const import DOMAIN
 
 
 class LyrionCLIConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_PUSH
 
     async def async_step_user(self, user_input=None):
         """Invoked when a user initiates a flow via the user interface."""

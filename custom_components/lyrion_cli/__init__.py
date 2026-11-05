@@ -1,15 +1,15 @@
-"""Example of a custom component exposing a service."""
+"""Service to call Lyrion CLI commands."""
 
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
 import json
 import logging
+from dataclasses import dataclass
 
 import aiohttp
-import voluptuous as vol
-
+import probatio
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_COMMAND,
     ATTR_DEVICE_ID,
@@ -28,68 +28,83 @@ from homeassistant.core import (
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import (
     config_validation as cv,
+)
+from homeassistant.helpers import (
     device_registry as dr,
+)
+from homeassistant.helpers import (
     entity_registry as er,
 )
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.typing import ConfigType
 
-TIMEOUT: float = 10.0
-ATTR_PARAMETERS = "parameters"
-ATTR_TIMEOUT = "timeout"
-CONF_HTTPS = "https"
+from .const import ATTR_PARAMETERS, ATTR_TIMEOUT, CONF_HTTPS, DOMAIN, TIMEOUT
 
-CLI_SCHEMA = vol.Schema(
+CLI_SCHEMA = probatio.Schema(
     {
-        vol.Required(ATTR_COMMAND): cv.string,
-        vol.Optional(ATTR_DEVICE_ID): vol.All(cv.ensure_list, [cv.string]),
-        vol.Optional(ATTR_ENTITY_ID): vol.All(cv.ensure_list, [cv.string]),
-        vol.Optional(ATTR_PARAMETERS): vol.All(
-            cv.ensure_list, vol.Length(min=1), [cv.string]
+        probatio.Required(ATTR_COMMAND): cv.string,
+        probatio.Optional(ATTR_DEVICE_ID): probatio.All(cv.ensure_list, [cv.string]),
+        probatio.Optional(ATTR_ENTITY_ID): probatio.All(cv.ensure_list, [cv.string]),
+        probatio.Optional(ATTR_PARAMETERS): probatio.All(
+            cv.ensure_list, probatio.Length(min=1), [cv.string]
         ),
-        vol.Optional(ATTR_TIMEOUT): vol.Coerce(float),
+        probatio.Optional(ATTR_TIMEOUT): probatio.Coerce(float),
     }
 )
 
 
 @dataclass
-class player:
-    """player."""
+class Player:
+    """Player."""
 
     mac: str
     lms_ip: str
-    lms_https: bool
+    lms_https: bool | None
     lms_port: int
-    username: str
-    password: str
+    username: str | None
+    password: str | None
 
 
-# The domain of your component. Should be equal to the name of your component.
-DOMAIN = "lyrion_cli"
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigType) -> bool:
-    # async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up the sync service example component."""
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up Lyrion CLI from a config entry."""
+    return True
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload a config entry."""
+    return True
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register the Lyrion CLI services."""
 
     device_registry = dr.async_get(hass)
     entity_registry = er.async_get(hass)
 
     async def async_get_players(call: ServiceCall):
-        devices: DeviceEntry = []
-        players: player = []
+        devices: list[DeviceEntry] = []
+        players: list[Player] = []
 
         if ATTR_ENTITY_ID in call.data:
             for entity_id in call.data[ATTR_ENTITY_ID]:
                 entity = entity_registry.async_get(entity_id_or_uuid=entity_id)
+                if not entity or not entity.config_entry_id:
+                    continue
                 config_entry = hass.config_entries.async_get_entry(
                     entity.config_entry_id
                 )
+                if config_entry is None:
+                    continue
 
                 players.append(
-                    player(
+                    Player(
                         mac=entity.unique_id,
                         lms_ip=config_entry.data[CONF_HOST],
                         lms_port=config_entry.data[CONF_PORT],
@@ -102,24 +117,33 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigType) -> bool:
         if ATTR_DEVICE_ID in call.data:
             for device_id in call.data[ATTR_DEVICE_ID]:
                 # devices.append(dr.async_get(device_id))
-                devices.append(device_registry.async_get(device_id))
+                device = device_registry.async_get(device_id)
+                if isinstance(device, DeviceEntry):
+                    devices.append(device)
 
             for device in devices:
-                for config_entry_id in device_registry.async_get(
-                    device.via_device_id
-                ).config_entries:
-                    if (
-                        hass.config_entries.async_get_entry(config_entry_id).domain
-                        == "squeezebox"
-                    ):
-                        lms_config_entry = hass.config_entries.async_get_entry(
-                            config_entry_id
-                        )
+                lms_config_entry: ConfigEntry | None = None
+                lms_device = (
+                    device_registry.async_get(device.via_device_id)
+                    if device.via_device_id
+                    else None
+                )
+                if lms_device is None:
+                    continue
+                for config_entry_id in lms_device.config_entries:
+                    entry_candidate = hass.config_entries.async_get_entry(
+                        config_entry_id
+                    )
+                    if entry_candidate and entry_candidate.domain == "squeezebox":
+                        lms_config_entry = entry_candidate
                         break
 
+                if lms_config_entry is None:
+                    continue
+
                 players.append(
-                    player(
-                        mac=list(device.connections)[0][1],
+                    Player(
+                        mac=next(iter(device.connections))[1],
                         lms_ip=lms_config_entry.data[CONF_HOST],
                         lms_port=lms_config_entry.data[CONF_PORT],
                         lms_https=lms_config_entry.data.get(CONF_HTTPS),
@@ -129,15 +153,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigType) -> bool:
                 )
         return players
 
-    async def async_query(player: player, *command: str, timeout: float | None = None):
+    async def async_query(player: Player, *command: str, timeout: float | None = None):
         if not timeout:
             timeout = TIMEOUT
 
         session: aiohttp.ClientSession = async_get_clientsession(hass)
-
-        if session is None:
-            raise ValueError("async_query() called with Server.session unset")
-
         auth = (
             None
             if player.username is None or player.password is None
@@ -192,7 +212,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigType) -> bool:
             _LOGGER.error("Received invalid response: %s", result_data)
         return None
 
-    async def async_query_service(call: ServiceCall) -> None:
+    async def async_query_service(call: ServiceCall) -> ServiceResponse:
         """Call Query."""
 
         players = await async_get_players(call=call)
@@ -234,8 +254,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigType) -> bool:
 
             if result != {}:
                 raise ServiceValidationError(f"Method {call.data[ATTR_COMMAND]} failed")
-
-        return True
 
     # Register our service with Home Assistant.
     hass.services.async_register(
